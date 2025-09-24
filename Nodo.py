@@ -1,7 +1,16 @@
+import socket
 class Nodo:
-    def __init__(id,socket,socket2,stato):
+    def __init__(id,slisten,saccept,stato,self):
         self.id = id
-        self.socket= socket
-        self.socket2 = socket2
+        self.slisten= slisten
+        self.saccept = saccept
         self.stato = stato
 
+    def getId(self):
+        return self.id
+    def getSocketListen(self):
+        return self.slisten
+    def getSocketAccept(self):
+        return self.saccept
+    def getStato(self):
+        return self.stato
