@@ -2,8 +2,6 @@ import socket
 import threading
 from Elezione import avvia_elezione
 
-def start_election(self):
-    avvia_elezione(self)
 
 BASE_PORT = 50000
 
