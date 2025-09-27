@@ -1,6 +1,9 @@
 import socket
 import threading
-import time
+from Elezione import avvia_elezione
+
+def start_election(self):
+    avvia_elezione(self)
 
 BASE_PORT = 50000
 
@@ -15,7 +18,7 @@ class Nodo:
         self.sock.bind(('0.0.0.0', self.port))
         self.lock = threading.Lock()
         self.ok_event = threading.Event()
-        self.listener_thread = threading.thread(target=self._listener, deamon=True)
+        self.listener_thread = threading.Thread(target=self._listener, deamon=True)
 
     def start(self):
         self.listener_thread.start()
@@ -50,3 +53,6 @@ class Nodo:
             with self.lock:
                 self.leader = sender
                 self.state = "normale"
+
+    def start_election(self):
+        avvia_elezione(self)
