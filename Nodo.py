@@ -1,6 +1,6 @@
 import socket
 import threading
-from elezione import avvia_elezione
+from Elezione import avvia_elezione
 
 def start_election(self):
     avvia_elezione(self)

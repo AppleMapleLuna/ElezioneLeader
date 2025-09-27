@@ -1,4 +1,4 @@
-from nodo import Nodo
+from Nodo import Nodo
 import time
 
 def crea_rete():
