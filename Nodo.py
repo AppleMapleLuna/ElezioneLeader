@@ -1,6 +1,6 @@
 import socket
 class Nodo:
-    def __init__(id,slisten,saccept,stato,self):
+    def __init__(self,id,slisten,saccept,stato):
         self.id = id
         self.slisten= slisten
         self.saccept = saccept
