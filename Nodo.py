@@ -15,17 +15,22 @@ class Nodo:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('0.0.0.0', self.port))
         self.lock = threading.Lock()
-        self.ok_event = threading.Event()
-        self.listener_thread = threading.Thread(target=self._listener, deamon=True)
+        self.listener_thread = threading.Thread(target=self._listener, daemon=True)
+        self.attivo = True
+
 
     def start(self):
         self.listener_thread.start()
 
     def _listener(self):
-        while True:
-            data, addr = self.sock.recvfrom(1024)
-            msg = data.decode()
-            self._handle_message(msg)
+        while self.attivo:
+            try:
+                data, addr = self.sock.recvfrom(1024)
+                msg = data.decode()
+                self._handle_message(msg)
+            except OSError:
+                break  # Socket chiuso
+
 
     def send_to(self, target_id, msg):
         port = self.peers[target_id]
@@ -41,16 +46,25 @@ class Nodo:
         parts = msg.split(':')
         typ = parts[0]
         sender = int(parts[1])
-        if typ == "ELECTION":
+        if typ == "elezione":
             if sender < self.id:
                 self.send_to(sender, f"OK:{self.id}")
-                self.start_election()
-        elif typ == "OK":
-            self.ok_event.set()
-        elif typ == "COORD":
+                if self.state != "leader":
+                    self.start_election()
+
+        elif typ == "ok":
+            self.risposte_ok = True
+        elif typ == "coordinatore":
             with self.lock:
                 self.leader = sender
                 self.state = "normale"
 
     def start_election(self):
         avvia_elezione(self)
+
+    def invia_messaggio(self, tipo, target_id):
+        self.send_to(target_id, f"{tipo}:{self.id}")
+
+    def stop(self):
+        self.attivo = False
+        self.sock.close()

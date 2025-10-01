@@ -12,7 +12,7 @@ def crea_rete():
 if __name__ == "__main__":
     nodi = crea_rete()
     time.sleep(2)
-    print("Simulo guasto del leader...")
-    nodi[3].sock.close()  # Simula guasto del nodo 3
+    # print("Simulo guasto del leader...")
+    # nodi[3].stop()
     time.sleep(1)
     nodi[1].start_election()  # Nodo 1 avvia elezione
