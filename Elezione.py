@@ -1,4 +1,5 @@
 import threading
+import time
 
 TIMEOUT = 5  #secondi di attesa per le risposte OK
 
@@ -43,6 +44,8 @@ def proclama_leader(nodo):
         for peer_id in nodo.peers:
             if peer_id != nodo.id:
                 nodo.invia_messaggio("coordinatore", peer_id)
+                print(f"[Nodo {peer_id}] ha inviato il messaggio di coordinazione")
+        time.sleep(0.5)
 
 
 #Ricevuta coordinatore perché riconosce il leader

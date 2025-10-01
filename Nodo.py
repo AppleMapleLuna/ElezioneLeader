@@ -49,17 +49,23 @@ class Nodo:
         if typ == "elezione":
             if sender < self.id:
                 self.send_to(sender, f"OK:{self.id}")
-                if self.state != "leader":
+                if self.state != "leader" and self.state!="eleggendo":
                     self.start_election()
 
         elif typ == "ok":
             self.risposte_ok = True
         elif typ == "coordinatore":
             with self.lock:
-                self.leader = sender
-                self.state = "normale"
+                if sender != self.id:
+                    self.leader = sender
+                    self.state = "normale"
+                    print(f"[Nodo {self.id}] riceve COORDINATORE da {sender}")
+
+
 
     def start_election(self):
+        if self.state == "leader" or self.state == "eleggendo":
+            return
         avvia_elezione(self)
 
     def invia_messaggio(self, tipo, target_id):
