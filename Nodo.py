@@ -23,7 +23,8 @@ class Nodo:
         self.id = id
         self.peers = peers
         self.port = BASE_PORT + id
-        self.state = "normale"
+        self.risposte_ok = False
+        self.stato = "normale"
         self.leader = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.ip, self.port))
@@ -68,6 +69,12 @@ class Nodo:
                 continue
             self.send_to(pid, msg)
 
+    def invia_ping(self):
+        self.pong_ricevuti = 0  # resetta il conteggio
+        self.broadcast(f"ping:{self.id}")
+        print(f"[Nodo {self.id}] invia PING a tutti i peer.")
+
+
     def _handle_message(self, msg):
         parts = msg.split(':')
         typ = parts[0]
@@ -75,7 +82,7 @@ class Nodo:
         if typ == "elezione":
             if sender < self.id:
                 self.send_to(sender, f"OK:{self.id}")
-                if self.state == "normale":
+                if self.stato == "normale":
                     self.start_election()
 
         elif typ == "ok":
@@ -85,7 +92,7 @@ class Nodo:
             with self.lock:
                 if sender != self.id:
                     self.leader = sender
-                    self.state = "normale"
+                    self.stato = "normale"
                     print(f"[Nodo {self.id}] riceve COORDINATORE da {sender}")
 
         elif typ == "ping":
@@ -93,13 +100,15 @@ class Nodo:
 
         elif typ == "pong":
             self.pong_ricevuti += 1
+            print(f"[Nodo {self.id}] riceve PONG da {sender}")
 
 
 
 
     def start_election(self):
-        if self.state == "leader" or self.state == "eleggendo":
+        if self.stato == "leader" or self.stato == "eleggendo":
             return
+        self.stato = "eleggendo"
         avvia_elezione(self)
 
     def invia_messaggio(self, tipo, target_id):

@@ -39,3 +39,36 @@ if __name__ == "__main__":
     if nodo.attendi_rete():
         nodo.start_election()
 
+    while True:
+        print("\n--- Menù Nodo", nodo.id, "---")
+        print("1. Avvia elezione")
+        print("2. Ping agli altri nodi")
+        print("3. Mostra stato")
+        print("4. Simula guasto")
+        print("5. Esci")
+        print("6. Verifica leader")
+        scelta = input("Scegli un'opzione: ")
+
+        if scelta == "1":
+            nodo.start_election()
+        elif scelta == "2":
+            nodo.invia_ping()
+            nodo.broadcast(f"ping:{nodo.id}")
+        elif scelta == "3":
+            print(f"Stato: {nodo.state}, Leader: {nodo.leader}")
+        elif scelta == "4":
+            nodo.stop()
+            print("Nodo arrestato.")
+        elif scelta == "5":
+            nodo.stop()
+            print("Uscita...")
+            break
+        elif scelta == "6":
+            if nodo.leader is None:
+                print("Nessun leader noto. Avvio elezione.")
+                nodo.start_election()
+            else:
+                print(f"Leader attuale: Nodo {nodo.leader}")
+
+        else:
+            print("Scelta non valida.")
