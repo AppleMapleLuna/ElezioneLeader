@@ -1,6 +1,17 @@
-from Nodo import Nodo, get_local_ip
+from Nodo import Nodo, get_local_ip, BASE_PORT
 import sys
 import requests
+
+def scarica_peers(server_ip):
+    try:
+        r = requests.get(f"http://{server_ip}:8000/peers")
+        peers_raw = r.json()
+        peers = {int(pid): tuple(peers_raw[pid]) for pid in peers_raw}
+        return peers
+    except Exception as e:
+        print(f"Errore nel download dei peer: {e}")
+        return {}
+
 
 def registra_nodo(id, ip, port, server_ip):
     try:
@@ -35,18 +46,14 @@ def chiedi_id(peers):
             print("Input non numerico. Riprova.")
 
 def crea_nodo(server_ip):
+    id = int(input("Inserisci l'ID del nodo: "))
     ip = get_local_ip()
-    peers = {
-        1: (ip, 50001),
-        2: (ip, 50002),
-        3: (ip, 50003)
-    }
-    id = chiedi_id(peers)
-    registra_nodo(id, ip, 50000 + id, server_ip)
+    port = BASE_PORT + id
+    registra_nodo(id, ip, port, server_ip)
+    peers = scarica_peers(server_ip)
     nodo = Nodo(id, peers)
-    nodo.start()
+    nodo.start(server_ip)
     return nodo
-
 
 if __name__ == "__main__":
     SERVER_IP = input("Inserisci l'IP del server: ")
@@ -56,43 +63,46 @@ if __name__ == "__main__":
         nodo.start_election()
 
     while True:
-        print("\n--- Menù Nodo", nodo.id, "---")
-        print("1. Avvia elezione")
-        print("2. Ping agli altri nodi")
-        print("3. Mostra stato")
-        print("4. Simula guasto")
-        print("5. Invia messaggio 'elezione'")
-        print("6. Invia messaggio 'OK'")
-        print("7. Invia messaggio 'coordinatore'")
-        print("0. Esci")   
-        scelta = input("Scegli un'opzione: ")
+        try:
+            print("\n--- Menù Nodo", nodo.id, "---")
+            print("1. Avvia elezione")
+            print("2. Ping agli altri nodi")
+            print("3. Mostra stato")
+            print("4. Simula guasto")
+            print("5. Invia messaggio 'elezione'")
+            print("6. Invia messaggio 'OK'")
+            print("7. Invia messaggio 'coordinatore'")
+            print("0. Esci")   
+            scelta = input("Scegli un'opzione: ")
 
-        if scelta == "1":
-            nodo.start_election()
-        elif scelta == "2":
-            nodo.invia_ping()
-            nodo.broadcast(f"ping:{nodo.id}")
-        elif scelta == "3":
-            print(f"Stato: {nodo.stato}, Leader: {nodo.leader}")
-        elif scelta == "4":
-            nodo.stop()
-            print("Nodo arrestato.")
-        elif scelta == "6":
-            target = int(input("ID del nodo destinatario: "))
-            nodo.invia_messaggio("elezione", target)
+            if scelta == "1":
+                nodo.start_election()
+            elif scelta == "2":
+                nodo.invia_ping()
+                nodo.broadcast(f"ping:{nodo.id}")
+            elif scelta == "3":
+                print(f"Stato: {nodo.stato}, Leader: {nodo.leader}")
+            elif scelta == "4":
+                nodo.stop()
+                print("Nodo arrestato.")
+            elif scelta == "6":
+                target = int(input("ID del nodo destinatario: "))
+                nodo.invia_messaggio("elezione", target)
 
-        elif scelta == "7":
-            target = int(input("ID del nodo destinatario: "))
-            nodo.invia_messaggio("ok", target)
+            elif scelta == "7":
+                target = int(input("ID del nodo destinatario: "))
+                nodo.invia_messaggio("ok", target)
 
-        elif scelta == "8":
-            target = int(input("ID del nodo destinatario: "))
-            nodo.invia_messaggio("coordinatore", target)
-    
-        elif scelta == "0":
-            nodo.stop()
-            print("Uscita...")
-            break
+            elif scelta == "8":
+                target = int(input("ID del nodo destinatario: "))
+                nodo.invia_messaggio("coordinatore", target)
+        
+            elif scelta == "0":
+                nodo.stop()
+                print("Uscita...")
+                break
 
-        else:
-            print("Scelta non valida.")
+            else:
+                print("Scelta non valida.")
+        except Exception as e:
+            print(f"Errore durante l'esecuzione: {e}")

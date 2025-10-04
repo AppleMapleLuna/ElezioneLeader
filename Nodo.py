@@ -2,9 +2,7 @@ import socket
 import threading
 from Elezione import avvia_elezione, gestisci_risposta_ok, ricevi_coordinatore
 import time
-
-
-import socket
+import requests
 
 BASE_PORT = 50000
 
@@ -33,9 +31,39 @@ class Nodo:
         self.attivo = True
         self.pong_ricevuti = 0
 
-    def start(self):
-        self.listener_thread.start()
+    def monitor_leader(self, intervallo=10):
+        def ciclo():
+            while self.attivo:
+                if self.leader and self.leader != self.id:
+                    self.send_to(self.leader, f"ping:{self.id}")
+                    time.sleep(intervallo)
+                    if self.pong_ricevuti == 0:
+                        print(f"[Nodo {self.id}] leader non risponde, avvio elezione.")
+                        self.start_election()
+                    self.pong_ricevuti = 0
+                time.sleep(intervallo)
+        threading.Thread(target=ciclo, daemon=True).start()
 
+
+    def aggiorna_peers(self, server_ip, intervallo=10):
+        def ciclo():
+            while self.attivo:
+                try:
+                    r = requests.get(f"http://{server_ip}:8000/peers")
+                    peers_raw = r.json()
+                    with self.lock:
+                        self.peers = {int(pid): tuple(peers_raw[pid]) for pid in peers_raw}
+                except:
+                    pass
+                time.sleep(intervallo)
+        threading.Thread(target=ciclo, daemon=True).start()
+
+
+    def start(self,server_ip):
+        self.aggiorna_peers(server_ip)
+        self.listener_thread.start()
+        self.monitor_leader()
+    
     def _listener(self):
         while self.attivo:
             try:
@@ -77,8 +105,15 @@ class Nodo:
 
     def _handle_message(self, msg):
         parts = msg.split(':')
+        if len(parts) < 2:
+            print(f"[Nodo {self.id}] messaggio malformato: {msg}")
+            return
         typ = parts[0]
-        sender = int(parts[1])
+        try:
+            sender = int(parts[1])
+        except ValueError:
+            print(f"[Nodo {self.id}] mittente non valido: {parts[1]}")
+            return
         if typ == "elezione":
             if sender < self.id:
                 self.send_to(sender, f"OK:{self.id}")
@@ -101,9 +136,6 @@ class Nodo:
         elif typ == "pong":
             self.pong_ricevuti += 1
             print(f"[Nodo {self.id}] riceve PONG da {sender}")
-
-
-
 
     def start_election(self):
         if self.stato == "leader" or self.stato == "eleggendo":

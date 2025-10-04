@@ -34,6 +34,13 @@ def verifica_risposte(nodo):
         proclama_leader(nodo)
     else:
         print(f"[Nodo {nodo.id}] attende coordinatore...")
+        threading.Timer(5, verifica_coordinatore, args=(nodo,)).start()
+
+def verifica_coordinatore(nodo):
+    if nodo.leader is None:
+        print(f"[Nodo {nodo.id}] coordinatore non ricevuto, avvio nuova elezione.")
+        nodo.start_election()
+
 
 #Ora il nodo da normale diventa leader
 def proclama_leader(nodo):
@@ -52,6 +59,9 @@ def proclama_leader(nodo):
 
 #Ricevuta coordinatore perché riconosce il leader
 def ricevi_coordinatore(nodo, nuovo_leader_id):
+    if nodo.leader == nuovo_leader_id:
+        return  # già riconosciuto
+    
     nodo.stato = "normale"
     nodo.leader = nuovo_leader_id
     print(f"[Nodo {nodo.id}] riconosce {nuovo_leader_id} come leader.")

@@ -17,6 +17,15 @@ def register():
 def get_peers():
     return jsonify(nodi)
 
+@app.route("/remove", methods=["POST"])
+def remove():
+    id = int(request.form["id"])
+    if id in nodi:
+        del nodi[id]
+        print(f"Nodo {id} rimosso dal registro.")
+    return "OK"
+
+
 if __name__ == "__main__":
     ip_server = get_local_ip()
     print(f"Server avviato su {ip_server}:8000")
