@@ -45,8 +45,10 @@ if __name__ == "__main__":
         print("2. Ping agli altri nodi")
         print("3. Mostra stato")
         print("4. Simula guasto")
-        print("5. Esci")
-        print("6. Verifica leader")
+        print("5. Invia messaggio 'elezione'")
+        print("6. Invia messaggio 'OK'")
+        print("7. Invia messaggio 'coordinatore'")
+        print("0. Esci")   
         scelta = input("Scegli un'opzione: ")
 
         if scelta == "1":
@@ -59,16 +61,22 @@ if __name__ == "__main__":
         elif scelta == "4":
             nodo.stop()
             print("Nodo arrestato.")
-        elif scelta == "5":
+        elif scelta == "6":
+            target = int(input("ID del nodo destinatario: "))
+            nodo.invia_messaggio("elezione", target)
+
+        elif scelta == "7":
+            target = int(input("ID del nodo destinatario: "))
+            nodo.invia_messaggio("ok", target)
+
+        elif scelta == "8":
+            target = int(input("ID del nodo destinatario: "))
+            nodo.invia_messaggio("coordinatore", target)
+    
+        elif scelta == "0":
             nodo.stop()
             print("Uscita...")
             break
-        elif scelta == "6":
-            if nodo.leader is None:
-                print("Nessun leader noto. Avvio elezione.")
-                nodo.start_election()
-            else:
-                print(f"Leader attuale: Nodo {nodo.leader}")
 
         else:
             print("Scelta non valida.")
