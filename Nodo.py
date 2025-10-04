@@ -1,23 +1,34 @@
 import socket
 import threading
-from Elezione import avvia_elezione
+from Elezione import avvia_elezione, gestisci_risposta_ok, ricevi_coordinatore
 
+
+import socket
 
 BASE_PORT = 50000
 
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))  # Google DNS
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
+
 class Nodo:
     def __init__(self,id, peers):
+        self.ip = get_local_ip()
         self.id = id
         self.peers = peers
         self.port = BASE_PORT + id
         self.state = "normale"
         self.leader = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('0.0.0.0', self.port))
+        self.sock.bind((self.ip, self.port))
         self.lock = threading.Lock()
         self.listener_thread = threading.Thread(target=self._listener, daemon=True)
         self.attivo = True
-
 
     def start(self):
         self.listener_thread.start()
@@ -33,8 +44,9 @@ class Nodo:
 
 
     def send_to(self, target_id, msg):
-        port = self.peers[target_id]
-        self.sock.sendto(msg.encode(), ('127.0.0.1', port))
+        ip, port = self.peers[target_id]
+        self.sock.sendto(msg.encode(), (ip, port))
+
 
     def broadcast(self, msg):
         for pid in self.peers:
@@ -49,11 +61,12 @@ class Nodo:
         if typ == "elezione":
             if sender < self.id:
                 self.send_to(sender, f"OK:{self.id}")
-                if self.state != "leader" and self.state!="eleggendo":
+                if self.state == "normale":
                     self.start_election()
 
         elif typ == "ok":
-            self.risposte_ok = True
+            gestisci_risposta_ok(self, sender)
+
         elif typ == "coordinatore":
             with self.lock:
                 if sender != self.id:

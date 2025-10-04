@@ -44,7 +44,7 @@ def proclama_leader(nodo):
         for peer_id in nodo.peers:
             if peer_id != nodo.id:
                 nodo.invia_messaggio("coordinatore", peer_id)
-                print(f"[Nodo {peer_id}] ha inviato il messaggio di coordinazione")
+                print(f"[Nodo {nodo.id}] invia COORDINATORE a {peer_id}")
         time.sleep(0.5)
 
 
