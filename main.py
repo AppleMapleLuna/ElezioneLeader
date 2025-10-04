@@ -1,5 +1,17 @@
 from Nodo import Nodo, get_local_ip
 import sys
+import requests
+
+def registra_nodo(id, ip, port, server_ip):
+    try:
+        requests.post(f"http://{server_ip}:8000/register", data={
+            "id": id,
+            "ip": ip,
+            "port": port
+        })
+        print(f"Nodo {id} registrato sul server.")
+    except Exception as e:
+        print(f"Errore nella registrazione: {e}")
 
 def chiedi_id(peers):
     if len(sys.argv) >= 2:
@@ -22,7 +34,7 @@ def chiedi_id(peers):
         except ValueError:
             print("Input non numerico. Riprova.")
 
-def crea_nodo():
+def crea_nodo(server_ip):
     ip = get_local_ip()
     peers = {
         1: (ip, 50001),
@@ -30,12 +42,16 @@ def crea_nodo():
         3: (ip, 50003)
     }
     id = chiedi_id(peers)
+    registra_nodo(id, ip, 50000 + id, server_ip)
     nodo = Nodo(id, peers)
     nodo.start()
     return nodo
 
+
 if __name__ == "__main__":
-    nodo = crea_nodo()
+    SERVER_IP = input("Inserisci l'IP del server: ")
+    nodo = crea_nodo(SERVER_IP)
+
     if nodo.attendi_rete():
         nodo.start_election()
 
@@ -57,7 +73,7 @@ if __name__ == "__main__":
             nodo.invia_ping()
             nodo.broadcast(f"ping:{nodo.id}")
         elif scelta == "3":
-            print(f"Stato: {nodo.state}, Leader: {nodo.leader}")
+            print(f"Stato: {nodo.stato}, Leader: {nodo.leader}")
         elif scelta == "4":
             nodo.stop()
             print("Nodo arrestato.")
