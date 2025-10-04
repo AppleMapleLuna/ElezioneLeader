@@ -1,5 +1,4 @@
 from Nodo import Nodo, get_local_ip
-import time
 import sys
 
 def chiedi_id(peers):
@@ -37,5 +36,6 @@ def crea_nodo():
 
 if __name__ == "__main__":
     nodo = crea_nodo()
-    time.sleep(2)
-    nodo.start_election()
+    if nodo.attendi_rete():
+        nodo.start_election()
+

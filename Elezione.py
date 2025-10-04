@@ -37,7 +37,9 @@ def verifica_risposte(nodo):
 
 #Ora il nodo da normale diventa leader
 def proclama_leader(nodo):
-    if nodo.leader is None:
+    if nodo.stato == "leader":
+        return # Già leader, fai nulla
+    elif nodo.leader is None:
         nodo.stato = "leader"
         nodo.leader = nodo.id
         print(f"[Nodo {nodo.id}] si proclama leader.")

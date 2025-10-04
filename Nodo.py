@@ -1,6 +1,7 @@
 import socket
 import threading
 from Elezione import avvia_elezione, gestisci_risposta_ok, ricevi_coordinatore
+import time
 
 
 import socket
@@ -29,6 +30,7 @@ class Nodo:
         self.lock = threading.Lock()
         self.listener_thread = threading.Thread(target=self._listener, daemon=True)
         self.attivo = True
+        self.pong_ricevuti = 0
 
     def start(self):
         self.listener_thread.start()
@@ -41,6 +43,18 @@ class Nodo:
                 self._handle_message(msg)
             except OSError:
                 break  # Socket chiuso
+
+
+    def attendi_rete(self, soglia=2, timeout=10):
+        self.broadcast(f"ping:{self.id}")
+        inizio = time.time()
+        while time.time() - inizio < timeout:
+            if self.pong_ricevuti >= soglia:
+                print(f"[Nodo {self.id}] ha ricevuto abbastanza pong, avvia elezione.")
+                return True
+            time.sleep(0.5)
+        print(f"[Nodo {self.id}] non ha ricevuto abbastanza pong, elezione rimandata.")
+        return False
 
 
     def send_to(self, target_id, msg):
@@ -73,6 +87,13 @@ class Nodo:
                     self.leader = sender
                     self.state = "normale"
                     print(f"[Nodo {self.id}] riceve COORDINATORE da {sender}")
+
+        elif typ == "ping":
+            self.send_to(sender, f"pong:{self.id}")
+
+        elif typ == "pong":
+            self.pong_ricevuti += 1
+
 
 
 
