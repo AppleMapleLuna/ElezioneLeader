@@ -1,4 +1,4 @@
-from Nodo import Nodo
+from Nodo import Nodo, get_local_ip
 import time
 import sys
 
@@ -13,7 +13,6 @@ def chiedi_id(peers):
         except ValueError:
             print("L'ID passato da terminale non è un numero valido.")
 
-    # Se non valido o non presente, chiedi all'utente
     while True:
         try:
             id = int(input(f"Inserisci l'ID del nodo ({list(peers.keys())}): "))
@@ -24,9 +23,8 @@ def chiedi_id(peers):
         except ValueError:
             print("Input non numerico. Riprova.")
 
-
-def crea_rete(self):
-    ip = chiedi_id(peers)
+def crea_nodo():
+    ip = get_local_ip()
     peers = {
         1: (ip, 50001),
         2: (ip, 50002),
@@ -38,9 +36,6 @@ def crea_rete(self):
     return nodo
 
 if __name__ == "__main__":
-    nodo = crea_rete()
+    nodo = crea_nodo()
     time.sleep(2)
-    # print("Simulo guasto del leader...")
-    # nodi[3].stop()
-    time.sleep(1)
-    nodo.start_election()  # Nodo 1 avvia elezione
+    nodo.start_election()
