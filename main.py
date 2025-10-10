@@ -51,17 +51,38 @@ def crea_nodo(server_ip):
     port = BASE_PORT + id
     registra_nodo(id, ip, port, server_ip)
     peers = scarica_peers(server_ip)
-    nodo = Nodo(id, peers)
+    nodo = Nodo(id, peers, server_ip)
     nodo.start(server_ip)
     return nodo
+
+def rimuovi_nodo(id, server_ip):
+    try:
+        requests.post(f"http://{server_ip}:8000/remove", data={"id": id})
+        print(f"Nodo {id} rimosso dal server.")
+    except Exception as e:
+        print(f"Errore nella rimozione: {e}")
+
+
+def verifica_leader(server_ip):
+    try:
+        r = requests.get(f"http://{server_ip}:8000/leader")
+        data = r.json()
+        return data.get("leader")
+    except:
+        return None
+
 
 if __name__ == "__main__":
     SERVER_IP = input("Inserisci l'IP del server: ")
     nodo = crea_nodo(SERVER_IP)
 
-    if nodo.attendi_rete():
+    leader = verifica_leader(SERVER_IP)
+    if leader is None:
         nodo.start_election()
-
+    else:
+        nodo.leader = leader
+        print(f"[Nodo {nodo.id}] riconosce il leader esistente: Nodo {leader}")
+    
     while True:
         try:
             print("\n--- Menù Nodo", nodo.id, "---")
@@ -98,7 +119,9 @@ if __name__ == "__main__":
                 nodo.invia_messaggio("coordinatore", target)
         
             elif scelta == "0":
+                rimuovi_nodo(nodo.id, SERVER_IP)
                 nodo.stop()
+                print("Nodo rimosso e arrestato.")
                 print("Uscita...")
                 break
 

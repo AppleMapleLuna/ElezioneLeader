@@ -30,3 +30,16 @@ if __name__ == "__main__":
     ip_server = get_local_ip()
     print(f"Server avviato su {ip_server}:8000")
     app.run(host=ip_server, port=8000)
+
+leader_id = None
+
+@app.route("/leader", methods=["GET"])
+def get_leader():
+    return jsonify({"leader": leader_id})
+
+@app.route("/set_leader", methods=["POST"])
+def set_leader():
+    global leader_id
+    leader_id = int(request.form["id"])
+    print(f"Leader impostato: Nodo {leader_id}")
+    return "OK"

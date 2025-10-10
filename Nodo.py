@@ -16,20 +16,30 @@ def get_local_ip():
     return ip
 
 class Nodo:
-    def __init__(self,id, peers):
+    def __init__(self,id, peers, server_ip):
+        # info nodi
         self.ip = get_local_ip()
         self.id = id
+        self.server_ip = server_ip
         self.peers = peers
         self.port = BASE_PORT + id
+        print(f"[Nodo {self.id}] in ascolto su {self.ip}:{self.port}")
+
+        # risposte
         self.risposte_ok = False
         self.stato = "normale"
         self.leader = None
+        # sock e thread
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # serve a far in modo che i nodi comunicano sullo stesso dispositivo
         self.sock.bind((self.ip, self.port))
         self.lock = threading.Lock()
         self.listener_thread = threading.Thread(target=self._listener, daemon=True)
+        # flag e counter
         self.attivo = True
         self.pong_ricevuti = 0
+        self.coordinatore_ricevuto = False
+
 
     def monitor_leader(self, intervallo=10):
         def ciclo():
@@ -70,6 +80,7 @@ class Nodo:
                 data, addr = self.sock.recvfrom(1024)
                 msg = data.decode()
                 self._handle_message(msg)
+                print(f"[Nodo {self.id}] ha ricevuto: {msg}")
             except OSError:
                 break  # Socket chiuso
 
@@ -92,6 +103,7 @@ class Nodo:
 
 
     def broadcast(self, msg):
+        print(f"[Nodo {self.id}] peers attuali: {self.peers}")
         for pid in self.peers:
             if pid == self.id:
                 continue
@@ -104,6 +116,10 @@ class Nodo:
 
 
     def _handle_message(self, msg):
+        if sender not in self.peers:
+            print(f"[Nodo {self.id}] ha ricevuto messaggio da nodo sconosciuto: {sender}")
+            return
+
         parts = msg.split(':')
         if len(parts) < 2:
             print(f"[Nodo {self.id}] messaggio malformato: {msg}")
@@ -114,22 +130,23 @@ class Nodo:
         except ValueError:
             print(f"[Nodo {self.id}] mittente non valido: {parts[1]}")
             return
+        # tipi previsti dall'algoritmo dei bulli
         if typ == "elezione":
             if sender < self.id:
                 self.send_to(sender, f"OK:{self.id}")
                 if self.stato == "normale":
                     self.start_election()
-
         elif typ == "ok":
             gestisci_risposta_ok(self, sender)
-
         elif typ == "coordinatore":
             with self.lock:
                 if sender != self.id:
                     self.leader = sender
                     self.stato = "normale"
+                    self.coordinatore_ricevuto = True
                     print(f"[Nodo {self.id}] riceve COORDINATORE da {sender}")
 
+        # ping e pong
         elif typ == "ping":
             self.send_to(sender, f"pong:{self.id}")
 
