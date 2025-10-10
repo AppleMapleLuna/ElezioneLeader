@@ -40,20 +40,20 @@ class Nodo:
         self.pong_ricevuti = 0
         self.coordinatore_ricevuto = False
 
-
-    def monitor_leader(self, intervallo=10):
+    def monitor_leader(self, intervallo=5):
         def ciclo():
             while self.attivo:
                 if self.leader and self.leader != self.id:
+                    self.pong_ricevuti = 0
                     self.send_to(self.leader, f"ping:{self.id}")
                     time.sleep(intervallo)
                     if self.pong_ricevuti == 0:
-                        print(f"[Nodo {self.id}] leader non risponde, avvio elezione.")
+                        print(f"[Nodo {self.id}] leader {self.leader} non risponde, avvio elezione.")
+                        self.leader = None
                         self.start_election()
-                    self.pong_ricevuti = 0
-                time.sleep(intervallo)
+                else:
+                    time.sleep(intervallo)
         threading.Thread(target=ciclo, daemon=True).start()
-
 
     def aggiorna_peers(self, server_ip, intervallo=10):
         def ciclo():
@@ -66,6 +66,7 @@ class Nodo:
                 except:
                     pass
                 time.sleep(intervallo)
+        time.sleep(1)
         threading.Thread(target=ciclo, daemon=True).start()
 
 
@@ -116,10 +117,6 @@ class Nodo:
 
 
     def _handle_message(self, msg):
-        if sender not in self.peers:
-            print(f"[Nodo {self.id}] ha ricevuto messaggio da nodo sconosciuto: {sender}")
-            return
-
         parts = msg.split(':')
         if len(parts) < 2:
             print(f"[Nodo {self.id}] messaggio malformato: {msg}")
@@ -127,6 +124,9 @@ class Nodo:
         typ = parts[0]
         try:
             sender = int(parts[1])
+            if sender not in self.peers:
+                print(f"[Nodo {self.id}] ha ricevuto messaggio da nodo sconosciuto: {sender}")
+                return
         except ValueError:
             print(f"[Nodo {self.id}] mittente non valido: {parts[1]}")
             return

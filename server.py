@@ -9,9 +9,12 @@ def register():
     id = int(request.form["id"])
     ip = request.form["ip"]
     port = int(request.form["port"])
+    if id in nodi:
+        return f"Errore: ID {id} già registrato", 400
     nodi[id] = (ip, port)
     print(f"Registrato nodo {id} → {ip}:{port}")
     return "OK"
+
 
 @app.route("/peers", methods=["GET"])
 def get_peers():

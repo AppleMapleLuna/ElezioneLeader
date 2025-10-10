@@ -111,7 +111,12 @@ if __name__ == "__main__":
                 nodo.invia_messaggio("elezione", target)
 
             elif scelta == "7":
-                target = int(input("ID del nodo destinatario: "))
+                target_input = input("ID del nodo destinatario: ").strip()
+                if not target_input.isdigit():
+                    print("ID non valido.")
+                    continue
+                target = int(target_input)
+
                 nodo.invia_messaggio("ok", target)
 
             elif scelta == "8":
